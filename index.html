@@ -192,17 +192,11 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
 /* ═══════════════════════════════════════════
    Calendar
 ═══════════════════════════════════════════ */
-.cal-week-nav{
-  display:grid;grid-template-columns:44px 1fr 44px;align-items:center;
-  margin-bottom:10px;gap:4px;
+.cal-week-label-row{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  margin-bottom:10px;
 }
-.nav-arrow{
-  background:none;border:none;cursor:pointer;
-  color:var(--green);padding:8px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .15s;
-}
-.nav-arrow:active{background:var(--green-light)}
+.cal-week-hint{font-size:10px;color:var(--text-dim);opacity:.6}
 .cal-week-label{font-size:12px;font-weight:700;color:var(--text)}
 .cal-grid{
   display:grid;grid-template-columns:repeat(7,1fr);gap:3px;
@@ -393,7 +387,7 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
   .page-title-row{margin-bottom:16px}
   .page-title-row h2{font-size:22px}
 
-  .cal-week-nav{margin-bottom:14px}
+  .cal-week-label-row{margin-bottom:14px}
   .cal-week-label{font-size:14px}
   .cal-grid{gap:5px}
   .cal-head{padding-bottom:8px;font-size:12px}
@@ -523,14 +517,9 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
 <div class="page" id="page-history">
   <div class="page-title-row">
     <h2>📅 训练历史</h2>
-    <div class="cal-week-nav">
-      <button class="nav-arrow prev" onclick="changeWeek(-1)">
-        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
+    <div class="cal-week-label-row">
+      <span class="cal-week-hint">← 左右滑动切换周 →</span>
       <span class="cal-week-label" id="weekLabel"></span>
-      <button class="nav-arrow next" onclick="changeWeek(1)">
-        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
     </div>
   </div>
 
@@ -794,6 +783,14 @@ function renderCalendar(weekStart){
     if(!isFuture)el.addEventListener('click',()=>showDayDetail(dateStr));
     grid.appendChild(el);
   }
+  // swipe to change week
+  const card = document.querySelector('#page-history .card');
+  let startX = 0;
+  card.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+  card.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) changeWeek(dx < 0 ? 1 : -1);
+  }, { passive: true });
 }
 function showDayDetail(dateStr){
   const sessions=sessionsOfDate(state,dateStr);
