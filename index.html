@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>⚽ 足球小将训练助手</title>
+<style>
+:root{
+  --green:#2DC653;--green-dark:#1FA83C;--green-light:#E8F9EC;
+  --blue:#4CC9F0;--blue-dark:#1E8BC3;--blue-light:#E0F6FF;
+  --yellow:#FFD60A;--orange:#FF9F1C;--red:#FF4D6D;
+  --bg:#F5F7FA;--bg-card:#FFFFFF;--text:#1A1A2E;--text-dim:#6B7280;
+  --shadow:0 4px 20px rgba(0,0,0,0.08);--radius:20px;--radius-sm:14px;
+  --font:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#1A1A2E;--bg-card:#252540;--text:#F0F0F5;--text-dim:#9CA3AF;
+  --shadow:0 4px 20px rgba(0,0,0,0.4);--green-light:#1A3A2A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  transition:background .3s,color .3s;user-select:none;
+  display:flex;flex-direction:column;height:100dvh;
+}
+
+/* ── Header ─────────────────────────────────── */
+header{
+  background:var(--green);padding:14px 20px 18px;
+  border-radius:0 0 28px 28px;position:relative;overflow:hidden;
+  flex-shrink:0;
+}
+header::before{
+  content:'';position:absolute;top:-30%;right:-10%;
+  width:180px;height:180px;background:rgba(255,255,255,0.12);
+  border-radius:50%;
+}
+header::after{
+  content:'';position:absolute;bottom:-40%;left:-5%;
+  width:120px;height:120px;background:rgba(255,255,255,0.08);
+  border-radius:50%;
+}
+.header-row{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
+h1{font-size:20px;font-weight:700;color:#fff;letter-spacing:.5px}
+.streak-badge{
+  background:rgba(255,255,255,0.22);color:#fff;padding:5px 14px;
+  border-radius:999px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;
+}
+.streak-badge svg{width:14px;height:14px;fill:#FFD60A}
+.main-tabs{
+  display:flex;gap:4px;margin-top:14px;position:relative;z-index:1;
+}
+.tab-btn{
+  flex:1;padding:8px 4px;border:none;border-radius:14px;
+  background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.75);
+  font-size:12px;font-weight:600;cursor:pointer;transition:.25s;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.tab-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tab-btn.active{background:#fff;color:var(--green)}
+
+/* ── Page Container ─────────────────────────── */
+.page-wrap{flex:1;overflow:hidden;position:relative}
+.page{
+  position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
+  padding:16px 16px 90px;display:none;scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+.page.active{display:block}
+
+/* ── Cards ──────────────────────────────────── */
+.card{
+  background:var(--bg-card);border-radius:var(--radius);
+  padding:18px;margin-bottom:14px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.card-title{
+  font-size:13px;font-weight:700;color:var(--text-dim);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;
+}
+
+/* ── Timer Card ─────────────────────────────── */
+.timer-card{
+  background:linear-gradient(135deg,var(--green) 0%,#1DB954 100%);
+  color:#fff;text-align:center;padding:22px 18px;
+}
+.timer-card::before{
+  content:'';position:absolute;top:-20px;right:-20px;
+  width:100px;height:100px;background:rgba(255,255,255,0.1);border-radius:50%;
+}
+.timer-time{
+  font-size:52px;font-weight:800;letter-spacing:-2px;
+  font-variant-numeric:tabular-nums;line-height:1;
+  margin:8px 0 14px;text-shadow:0 2px 10px rgba(0,0,0,0.15);
+}
+.timer-sub{font-size:13px;opacity:.8;margin-bottom:16px}
+.btn-start{
+  background:#fff;color:var(--green);border:none;
+  padding:14px 40px;border-radius:999px;font-size:17px;font-weight:800;
+  cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.18);
+  transition:transform .15s,box-shadow .15s;
+}
+.btn-start:active{transform:scale(.96);box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.btn-start.running{background:rgba(255,255,255,0.2);color:#fff}
+.session-counts{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+  margin-top:14px;
+}
+.count-chip{
+  background:rgba(255,255,255,0.2);border-radius:12px;
+  padding:8px 4px;text-align:center;
+}
+.count-chip .c-num{
+  font-size:22px;font-weight:800;display:block;line-height:1;
+}
+.count-chip .c-label{font-size:10px;opacity:.8;margin-top:2px;display:block}
+
+/* ── Training Items Grid ─────────────────────── */
+.items-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.train-item{
+  background:var(--bg-card);border-radius:var(--radius);
+  border:2.5px solid transparent;padding:14px 10px;text-align:center;
+  cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.train-item:active{transform:scale(.94)}
+.train-item.active{border-color:var(--green);background:var(--green-light)}
+.train-item .item-icon{
+  font-size:32px;display:block;margin-bottom:6px;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+}
+.train-item .item-name{
+  font-size:13px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;
+}
+.train-item .item-count{
+  font-size:28px;font-weight:900;color:var(--green);line-height:1;
+}
+.train-item .item-count.zero{color:var(--text-dim);opacity:.4}
+.train-item .add-btn{
+  position:absolute;top:8px;right:8px;
+  width:26px;height:26px;border-radius:50%;border:none;
+  background:var(--green);color:#fff;font-size:18px;font-weight:700;
+  cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(45,198,83,0.35);
+}
+.train-item .add-btn:active{transform:scale(.88)}
+
+/* ── History Calendar ───────────────────────── */
+.week-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.week-nav button{
+  background:none;border:none;font-size:18px;cursor:pointer;
+  color:var(--green);padding:4px 10px;border-radius:10px;
+}
+.week-nav button:active{background:var(--green-light)}
+.week-label{font-size:14px;font-weight:700;color:var(--text)}
+.cal-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
+}
+.cal-head{
+  text-align:center;font-size:11px;font-weight:700;
+  color:var(--text-dim);padding:4px 0 8px;
+}
+.cal-day{
+  aspect-ratio:1;border-radius:10px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;gap:1px;
+  transition:background .15s;
+}
+.cal-day .cd-num{line-height:1}
+.cal-day .cd-dot{width:5px;height:5px;border-radius:50%;background:var(--green);display:none}
+.cal-day.has-train{background:var(--green-light);color:var(--green)}
+.cal-day.has-train .cd-dot{display:block}
+.cal-day.today{background:var(--blue-light);color:var(--blue-dark)}
+.cal-day.today .cd-dot{background:var(--blue)}
+.cal-day.future{opacity:.35}
+
+/* ── Day Detail ─────────────────────────────── */
+.day-detail{margin-top:16px}
+.day-stat-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.06);
+}
+.day-stat-row:last-child{border-bottom:none}
+.day-stat-row .dsr-label{font-size:14px;color:var(--text-dim);display:flex;align-items:center;gap:8px}
+.day-stat-row .dsr-val{font-size:16px;font-weight:800;color:var(--text)}
+.day-stat-row .dsr-icon{font-size:18px}
+
+/* ── Badges ────────────────────────────────── */
+.badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.badge-card{
+  background:var(--bg-card);border-radius:var(--radius);
+  padding:16px 12px;text-align:center;
+  border:2px solid rgba(0,0,0,0.06);transition:transform .15s,border-color .2s;
+  position:relative;overflow:hidden;
+}
+.badge-card.earned{border-color:var(--yellow)}
+.badge-card.locked{opacity:.5;filter:grayscale(1)}
+.badge-card .badge-icon{font-size:40px;display:block;margin-bottom:8px}
+.badge-card .badge-name{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;display:block}
+.badge-card .badge-desc{font-size:11px;color:var(--text-dim);line-height:1.4;display:block}
+.badge-card .badge-lock{
+  position:absolute;top:8px;right:8px;font-size:14px;opacity:.4;
+}
+
+/* ── Stats ─────────────────────────────────── */
+.stats-hero{
+  background:linear-gradient(135deg,var(--green) 0%,#1DB954 100%);
+  color:#fff;border-radius:var(--radius);padding:22px;text-align:center;
+  margin-bottom:14px;position:relative;overflow:hidden;
+}
+.stats-hero::before{
+  content:'';position:absolute;top:-30px;right:-30px;
+  width:140px;height:140px;background:rgba(255,255,255,0.1);border-radius:50%;
+}
+.stats-hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.stat-box{
+  background:rgba(255,255,255,0.18);border-radius:14px;
+  padding:12px 10px;text-align:center;
+}
+.stat-box .s-val{font-size:28px;font-weight:900;line-height:1;display:block}
+.stat-box .s-lbl{font-size:11px;opacity:.85;margin-top:4px;display:block}
+
+.rank-list{margin-top:4px}
+.rank-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.05);
+}
+.rank-row:last-child{border-bottom:none}
+.rank-num{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;flex-shrink:0;
+}
+.rank-num.r1{background:#FFD60A;color:#1A1A2E}.rank-num.r2{background:#C0C0C0;color:#1A1A2E}
+.rank-num.r3{background:#CD7F32;color:#fff}.rank-num.rn{background:var(--bg);color:var(--text-dim)}
+.rank-emoji{font-size:22px}
+.rank-info{flex:1}
+.rank-name{font-size:14px;font-weight:700;color:var(--text)}
+.rank-count{font-size:12px;color:var(--text-dim);margin-top:1px}
+.rank-bar-wrap{flex:1;display:flex;align-items:center}
+.rank-bar{
+  height:8px;border-radius:999px;background:var(--green);opacity:.25;
+  transition:width .4s ease;
+}
+.rank-bar-fill{height:8px;border-radius:999px;background:var(--green);width:0;transition:width .4s ease}
+.rank-val{font-size:13px;font-weight:800;color:var(--text);min-width:40px;text-align:right}
+
+.btn-export{
+  width:100%;background:var(--green);color:#fff;border:none;
+  padding:13px;border-radius:999px;font-size:15px;font-weight:800;
+  cursor:pointer;margin-top:8px;transition:background .15s;
+}
+.btn-export:active{background:var(--green-dark)}
+
+/* ── Bottom Nav ─────────────────────────────── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg-card);
+  border-top:1px solid rgba(0,0,0,0.06);
+  display:flex;padding:8px 16px env(safe-area-inset-bottom,8px);
+  z-index:100;backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:3px;padding:6px 4px;border:none;background:none;
+  cursor:pointer;color:var(--text-dim);transition:color .2s;
+}
+.nav-item svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-item span{font-size:10px;font-weight:600}
+.nav-item.active{color:var(--green)}
+
+/* ── Toast ─────────────────────────────────── */
+.toast{
+  position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:#1A1A2E;color:#fff;padding:12px 24px;
+  border-radius:999px;font-size:14px;font-weight:700;z-index:999;
+  opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.green{background:var(--green)}
+.toast.gold{background:var(--yellow);color:#1A1A2E}
+
+/* ── Bounce animation ───────────────────────── */
+@keyframes bounce{
+  0%,100%{transform:scale(1)}
+  40%{transform:scale(1.22)}
+  60%{transform:scale(.94)}
+}
+@keyframes pop{
+  0%{transform:scale(.7);opacity:0}
+  70%{transform:scale(1.1)}
+  100%{transform:scale(1);opacity:1}
+}
+.bounce{animation:bounce .3s ease}
+.pop{animation:pop .4s ease}
+
+/* ── Page header labels ─────────────────────── */
+.page-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:16px;padding-top:4px;
+}
+.page-header h2{font-size:22px;font-weight:900;color:var(--text)}
+
+/* ── Empty state ───────────────────────────── */
+.empty-state{
+  text-align:center;padding:32px 16px;color:var(--text-dim);
+}
+.empty-state .es-icon{font-size:48px;display:block;margin-bottom:12px;opacity:.5}
+.empty-state p{font-size:14px;line-height:1.6}
+
+/* ── Dark mode toggle ───────────────────────── */
+.dark-toggle{
+  background:rgba(255,255,255,0.2);border:none;border-radius:999px;
+  padding:7px 12px;font-size:13px;cursor:pointer;color:#fff;
+  display:flex;align-items:center;gap:5px;transition:background .2s;
+}
+.dark-toggle:active{background:rgba(255,255,255,0.3)}
+.dark-toggle svg{width:15px;height:15px;fill:currentColor;stroke:none}
+</style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────── -->
+<header>
+  <div class="header-row">
+    <h1>⚽ 足球小将训练助手</h1>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="dark-toggle" onclick="toggleDark()" aria-label="切换深色模式">
+        <svg viewBox="0 0 24 24" id="icon-sun"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <div class="streak-badge" id="streakBadge">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8 7 4 9 4 13a8 8 0 0016 0c0-4-4-6-8-11z"/></svg>
+        <span id="streakNum">0</span>天连续
+      </div>
+    </div>
+  </div>
+  <div class="main-tabs">
+    <button class="tab-btn active" data-page="train" onclick="switchTab('train')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      训练
+    </button>
+    <button class="tab-btn" data-page="history" onclick="switchTab('history')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      历史
+    </button>
+    <button class="tab-btn" data-page="badges" onclick="switchTab('badges')">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      徽章
+    </button>
+    <button class="tab-btn" data-page="stats" onclick="switchTab('stats')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      统计
+    </button>
+  </div>
+</header>
+
+<!-- ── Page: Train ──────────────────────────────── -->
+<div class="page active" id="page-train">
+  <div class="timer-card">
+    <div class="timer-sub" id="timerLabel">点击开始，计时本次训练</div>
+    <div class="timer-time" id="timerDisplay">00:00</div>
+    <button class="btn-start" id="btnStart" onclick="toggleTimer()">⚡ 开始训练</button>
+    <div class="session-counts" id="sessionCounts">
+      <div class="count-chip"><span class="c-num" id="sc-shoot">0</span><span class="c-label">射门</span></div>
+      <div class="count-chip"><span class="c-num" id="sc-pass">0</span><span class="c-label">传球</span></div>
+      <div class="count-chip"><span class="c-num" id="sc-dribble">0</span><span class="c-label">带球</span></div>
+      <div class="count-chip"><span class="c-num" id="sc-catch">0</span><span class="c-label">接球</span></div>
+      <div class="count-chip"><span class="c-num" id="sc-header">0</span><span class="c-label">头球</span></div>
+    </div>
+  </div>
+
+  <div class="items-grid" style="margin-top:16px">
+    <div class="train-item" onclick="addCount('shoot')">
+      <button class="add-btn" onclick="event.stopPropagation();addCount('shoot')">+</button>
+      <span class="item-icon">⚽</span>
+      <span class="item-name">射门</span>
+      <span class="item-count zero" id="cnt-shoot">0</span>
+    </div>
+    <div class="train-item" onclick="addCount('pass')">
+      <button class="add-btn" onclick="event.stopPropagation();addCount('pass')">+</button>
+      <span class="item-icon">🎯</span>
+      <span class="item-name">传球</span>
+      <span class="item-count zero" id="cnt-pass">0</span>
+    </div>
+    <div class="train-item" onclick="addCount('dribble')">
+      <button class="add-btn" onclick="event.stopPropagation();addCount('dribble')">+</button>
+      <span class="item-icon">🏃</span>
+      <span class="item-name">带球绕桩</span>
+      <span class="item-count zero" id="cnt-dribble">0</span>
+    </div>
+    <div class="train-item" onclick="addCount('catch')">
+      <button class="add-btn" onclick="event.stopPropagation();addCount('catch')">+</button>
+      <span class="item-icon">🧤</span>
+      <span class="item-name">接球</span>
+      <span class="item-count zero" id="cnt-catch">0</span>
+    </div>
+    <div class="train-item" onclick="addCount('header')">
+      <button class="add-btn" onclick="event.stopPropagation();addCount('header')">+</button>
+      <span class="item-icon">🗣</span>
+      <span class="item-name">头球</span>
+      <span class="item-count zero" id="cnt-header">0</span>
+    </div>
+  </div>
+
+  <div id="trainTip" style="text-align:center;margin-top:14px;font-size:13px;color:var(--text-dim)">
+    选择项目后点击 + 按钮记录次数
+  </div>
+</div>
+
+<!-- ── Page: History ───────────────────────────── -->
+<div class="page" id="page-history">
+  <div class="page-header">
+    <h2>📅 训练历史</h2>
+    <div class="week-nav" style="margin:0;flex:none">
+      <button onclick="changeWeek(-1)">‹</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button onclick="changeWeek(1)">›</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cal-grid" id="calGrid">
+      <div class="cal-head">日</div><div class="cal-head">一</div><div class="cal-head">二</div>
+      <div class="cal-head">三</div><div class="cal-head">四</div><div class="cal-head">五</div><div class="cal-head">六</div>
+    </div>
+  </div>
+
+  <div class="day-detail" id="dayDetail">
+    <div class="empty-state">
+      <span class="es-icon">📅</span>
+      <p>点击上方有记录的日期<br>查看当天训练详情</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Page: Badges ─────────────────────────────── -->
+<div class="page" id="page-badges">
+  <div class="page-header">
+    <h2>🏆 成就徽章</h2>
+    <span id="badgeProgress" style="font-size:13px;color:var(--text-dim);font-weight:600"></span>
+  </div>
+  <div class="badge-grid" id="badgeGrid"></div>
+</div>
+
+<!-- ── Page: Stats ──────────────────────────────── -->
+<div class="page" id="page-stats">
+  <div class="page-header">
+    <h2>📊 我的统计</h2>
+  </div>
+
+  <div class="stats-hero">
+    <div style="font-size:14px;font-weight:700;opacity:.9">累计训练数据</div>
+    <div class="stats-hero-grid">
+      <div class="stat-box">
+        <span class="s-val" id="totalSessions">0</span>
+        <span class="s-lbl">训练次数</span>
+      </div>
+      <div class="stat-box">
+        <span class="s-val" id="totalMins">0</span>
+        <span class="s-lbl">总训练(分钟)</span>
+      </div>
+      <div class="stat-box">
+        <span class="s-val" id="avgMins">0</span>
+        <span class="s-lbl">平均时长(分钟)</span>
+      </div>
+      <div class="stat-box">
+        <span class="s-val" id="totalCounts">0</span>
+        <span class="s-lbl">累计总次数</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏅 项目排行榜</div>
+    <div class="rank-list" id="rankList"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📤 数据导出</div>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px">导出所有训练记录为 CSV 文件</p>
+    <button class="btn-export" onclick="exportCSV()">📥 导出训练记录</button>
+  </div>
+</div>
+
+<!-- ── Bottom Nav ───────────────────────────────── -->
+<div class="bottom-nav">
+  <button class="nav-item active" data-page="train" onclick="switchTab('train')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span>训练</span>
+  </button>
+  <button class="nav-item" data-page="history" onclick="switchTab('history')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>历史</span>
+  </button>
+  <button class="nav-item" data-page="badges" onclick="switchTab('badges')">
+    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    <span>徽章</span>
+  </button>
+  <button class="nav-item" data-page="stats" onclick="switchTab('stats')">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>统计</span>
+  </button>
+</div>
+
+<!-- ── Toast ──────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// Constants & Data
+// ═══════════════════════════════════════════════════════
+const ITEMS = ['shoot','pass','dribble','catch','header'];
+const ITEM_NAMES = {shoot:'射门',pass:'传球',dribble:'带球绕桩',catch:'接球',header:'头球'};
+const ITEM_ICONS = {shoot:'⚽',pass:'🎯',dribble:'🏃',catch:'🧤',header:'🗣'};
+
+const BADGES = [
+  {id:'first',name:'初次登场',desc:'完成第一次训练',icon:'🌟',cond:d=>d.sessions.length>=1},
+  {id:'streak3',name:'连练3天',desc:'连续训练3天',icon:'🔥',cond:d=>d.streak>=3},
+  {id:'streak7',name:'坚持不懈',desc:'连续训练7天',icon:'💪',cond:d=>d.streak>=7},
+  {id:'shoot20',name:'射门达人',desc:'累计射门20次',icon:'⚽',cond:d=>totalOf(d,'shoot')>=20},
+  {id:'pass30',name:'传球高手',desc:'累计传球30次',icon:'🎯',cond:d=>totalOf(d,'pass')>=30},
+  {id:'total100',name:'百次训练',desc:'累计训练100次',icon:'💯',cond:d=>totalCounts(d)>=100},
+  {id:'shoot50',name:'射门猛将',desc:'累计射门50次',icon:'🥅',cond:d=>totalOf(d,'shoot')>=50},
+  {id:'shoot100',name:'射手王',desc:'累计射门100次',icon:'👑',cond:d=>totalOf(d,'shoot')>=100},
+  {id:'sessions10',name:'常客',desc:'完成10次训练',icon:'🏠',cond:d=>d.sessions.length>=10},
+  {id:'sessions30',name:'老将',desc:'完成30次训练',icon:'🎖',cond:d=>d.sessions.length>=30},
+  {id:'all5',name:'全能球员',desc:'5个项目都有过记录',icon:'🌈',cond:d=>ITEMS.every(i=>totalOf(d,i)>0)},
+  {id:'week5',name:'周冠军',desc:'单周训练5次',icon:'🏆',cond:d=>{const w=weekSessions(d,getWeekStart());return w>=5}},
+];
+
+// ═══════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════
+let state = load();
+let currentWeekStart = getWeekStart();
+let calWeekStart = getWeekStart();
+let timerInterval = null;
+let timerSeconds = 0;
+let isTimerRunning = false;
+let sessionStartTime = null;
+let currentSession = {items:{shoot:0,pass:0,dribble:0,catch:0,header:0},duration:0};
+
+function newUserData(){
+  return {sessions:[],badges:[],streak:0,lastTrainDate:null};
+}
+
+// ═══════════════════════════════════════════════════════
+// Storage
+// ═══════════════════════════════════════════════════════
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem('football_trainer_v1'));
+    if(d) return d;
+  }catch(e){}
+  return newUserData();
+}
+function save(){
+  localStorage.setItem('football_trainer_v1',JSON.stringify(state));
+}
+
+// Dark mode
+function toggleDark(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+(function(){
+  if(localStorage.getItem('theme') === 'dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+  }
+})();
+
+// ═══════════════════════════════════════════════════════
+// Timer
+// ═══════════════════════════════════════════════════════
+function formatTime(s){
+  const m = Math.floor(s/60), sec = s%60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function toggleTimer(){
+  if(!isTimerRunning){
+    isTimerRunning = true;
+    sessionStartTime = Date.now();
+    document.getElementById('btnStart').textContent = '⏹ 结束训练';
+    document.getElementById('btnStart').classList.add('running');
+    document.getElementById('timerLabel').textContent = '训练中...';
+    timerInterval = setInterval(()=>{
+      timerSeconds++;
+      document.getElementById('timerDisplay').textContent = formatTime(timerSeconds);
+      currentSession.duration = timerSeconds;
+    },1000);
+  } else {
+    endSession();
+  }
+}
+function endSession(){
+  clearInterval(timerInterval);
+  isTimerRunning = false;
+  timerInterval = null;
+  document.getElementById('btnStart').textContent = '⚡ 开始训练';
+  document.getElementById('btnStart').classList.remove('running');
+  document.getElementById('timerLabel').textContent = '点击开始，计时本次训练';
+
+  const totalCounts = ITEMS.reduce((s,i)=>s+currentSession.items[i],0);
+  if(totalCounts === 0 && timerSeconds < 30){
+    timerSeconds = 0;
+    document.getElementById('timerDisplay').textContent = '00:00';
+    return;
+  }
+
+  // Save session
+  const session = {
+    id: Date.now(),
+    date: new Date().toISOString().split('T')[0],
+    duration: timerSeconds,
+    items: {...currentSession.items}
+  };
+  state.sessions.push(session);
+  updateStreak();
+  checkBadges();
+  save();
+
+  toast('🎉 训练已保存！太棒了！','green');
+  resetSession();
+  refreshAll();
+}
+
+// ═══════════════════════════════════════════════════════
+// Counts
+// ═══════════════════════════════════════════════════════
+function addCount(item){
+  if(!isTimerRunning) {
+    toast('请先点击"开始训练"计时！','gold');
+    return;
+  }
+  currentSession.items[item]++;
+  const el = document.getElementById('cnt-'+item);
+  el.textContent = currentSession.items[item];
+  el.classList.remove('zero');
+  el.classList.remove('bounce');
+  void el.offsetWidth;
+  el.classList.add('bounce');
+
+  document.getElementById('sc-'+item).textContent = currentSession.items[item];
+
+  playBeep();
+}
+
+function playBeep(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
+    osc.start();osc.stop(ctx.currentTime+0.15);
+  }catch(e){}
+}
+
+function resetSession(){
+  timerSeconds = 0;
+  document.getElementById('timerDisplay').textContent = '00:00';
+  currentSession = {items:{shoot:0,pass:0,dribble:0,catch:0,header:0},duration:0};
+  ITEMS.forEach(i=>{
+    document.getElementById('cnt-'+i).textContent = '0';
+    document.getElementById('cnt-'+i).classList.add('zero');
+    document.getElementById('sc-'+i).textContent = '0';
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// Streak
+// ═══════════════════════════════════════════════════════
+function updateStreak(){
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
+  const last = state.lastTrainDate;
+
+  if(last === today) return;
+  if(last === yesterday || !last){
+    state.streak = (last === yesterday) ? state.streak + 1 : 1;
+  } else {
+    state.streak = 1;
+  }
+  state.lastTrainDate = today;
+}
+
+// ═══════════════════════════════════════════════════════
+// Badges
+// ═══════════════════════════════════════════════════════
+function checkBadges(){
+  BADGES.forEach(b=>{
+    if(!state.badges.includes(b.id) && b.cond(state)){
+      state.badges.push(b.id);
+      setTimeout(()=>toast(`${b.icon} 获得新徽章：${b.name}！`,'gold'),500);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════
+function totalOf(d,item){return d.sessions.reduce((s,sn)=>s+(sn.items[item]||0),0);}
+function totalCounts(d){return ITEMS.reduce((s,i)=>s+totalOf(d,i),0);}
+function getWeekStart(d){
+  d = d || new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day===0?-6:1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0,0,0,0);
+  return monday.toISOString().split('T')[0];
+}
+function weekSessions(d,w){
+  const end = new Date(w);end.setDate(end.getDate()+6);
+  const endStr = end.toISOString().split('T')[0];
+  return d.sessions.filter(s=>s.date>=w&&s.date<=endStr).length;
+}
+function sessionsOfDate(d,date){return d.sessions.filter(s=>s.date===date);}
+
+// ═══════════════════════════════════════════════════════
+// Tab Switching
+// ═══════════════════════════════════════════════════════
+function switchTab(page){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+page));
+  if(page==='history') renderCalendar(calWeekStart);
+  if(page==='badges') renderBadges();
+  if(page==='stats') renderStats();
+}
+
+// ═══════════════════════════════════════════════════════
+// Calendar
+// ═══════════════════════════════════════════════════════
+function changeWeek(delta){
+  const d = new Date(calWeekStart);
+  d.setDate(d.getDate() + delta*7);
+  calWeekStart = getWeekStart(d);
+  renderCalendar(calWeekStart);
+}
+
+function renderCalendar(weekStart){
+  const d = new Date(weekStart);
+  d.setHours(0,0,0,0);
+  const label = `${d.getMonth()+1}月 ${d.getDate()}日`;
+  const end = new Date(d);end.setDate(end.getDate()+6);
+  document.getElementById('weekLabel').textContent = `${label} - ${end.getMonth()+1}月${end.getDate()}日`;
+
+  const grid = document.getElementById('calGrid');
+  const heads = grid.querySelectorAll('.cal-head');
+  // find existing day cells
+  const existing = grid.querySelectorAll('.cal-day');
+  const days=[];
+  for(let i=0;i<7;i++){
+    const dd = new Date(d);dd.setDate(dd.getDate()+i);
+    const dateStr = dd.toISOString().split('T')[0];
+    const isToday = dateStr === new Date().toISOString().split('T')[0];
+    const isFuture = dd > new Date();
+    const hasTrain = state.sessions.some(s=>s.date===dateStr);
+    days.push({dateStr,isToday,isFuture,hasTrain,day:dd.getDate()});
+  }
+  // Remove old day cells
+  existing.forEach(e=>e.remove());
+  days.forEach(day=>{
+    const el = document.createElement('div');
+    el.className='cal-day'+(day.hasTrain?' has-train':'')+(day.isToday?' today':'')+(day.isFuture?' future':'');
+    el.innerHTML=`<span class="cd-num">${day.day}</span><span class="cd-dot"></span>`;
+    el.addEventListener('click',()=>showDayDetail(day.dateStr));
+    grid.appendChild(el);
+  });
+}
+
+function showDayDetail(dateStr){
+  const sessions = sessionsOfDate(state,dateStr);
+  const detail = document.getElementById('dayDetail');
+  if(!sessions.length){
+    detail.innerHTML=`<div class="empty-state"><span class="es-icon">📅</span><p>${dateStr} 没有训练记录</p></div>`;
+    return;
+  }
+  const totalDur = sessions.reduce((s,ss)=>s+ss.duration,0);
+  const totalCnt = sessions.reduce((s,ss)=>s+ITEMS.reduce((a,i)=>a+(ss.items[i]||0),0),0);
+  const mins = Math.round(totalDur/60);
+  let html=`<div class="card"><div class="card-title">${dateStr} 训练详情</div>`;
+  html+=`<div class="day-stat-row"><span class="dsr-label"><span class="dsr-icon">🏋️</span> 训练场次</span><span class="dsr-val">${sessions.length}次</span></div>`;
+  html+=`<div class="day-stat-row"><span class="dsr-label"><span class="dsr-icon">⏱</span> 总时长</span><span class="dsr-val">${mins}分钟</span></div>`;
+  html+=`<div class="day-stat-row"><span class="dsr-label"><span class="dsr-icon">⚽</span> 总次数</span><span class="dsr-val">${totalCnt}次</span></div>`;
+  html+=`<div style="height:12px"></div>`;
+  ITEMS.forEach(i=>{
+    const tot = sessions.reduce((s,ss)=>s+(ss.items[i]||0),0);
+    if(tot>0) html+=`<div class="day-stat-row"><span class="dsr-label"><span class="dsr-icon">${ITEM_ICONS[i]}</span> ${ITEM_NAMES[i]}</span><span class="dsr-val">${tot}次</span></div>`;
+  });
+  html+=`</div>`;
+  detail.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// Badges Render
+// ═══════════════════════════════════════════════════════
+function renderBadges(){
+  const earned = state.badges;
+  const total = BADGES.length;
+  document.getElementById('badgeProgress').textContent=`${earned.length}/${total} 已获得`;
+  const grid = document.getElementById('badgeGrid');
+  grid.innerHTML='';
+  BADGES.forEach(b=>{
+    const isEarned = earned.includes(b.id);
+    const el = document.createElement('div');
+    el.className='badge-card'+(isEarned?' earned':' locked');
+    el.innerHTML=`
+      <span class="badge-icon">${b.icon}</span>
+      <span class="badge-name">${b.name}</span>
+      <span class="badge-desc">${b.desc}</span>
+      ${!isEarned?'<span class="badge-lock">🔒</span>':''}
+    `;
+    if(isEarned) el.classList.add('pop');
+    grid.appendChild(el);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// Stats Render
+// ═══════════════════════════════════════════════════════
+function renderStats(){
+  const total = state.sessions.length;
+  const totalSec = state.sessions.reduce((s,ss)=>s+ss.duration,0);
+  const totalMins = Math.round(totalSec/60);
+  const avgMins = total>0 ? Math.round(totalMins/total) : 0;
+  const totalCnt = totalCounts(state);
+
+  document.getElementById('totalSessions').textContent = total;
+  document.getElementById('totalMins').textContent = totalMins;
+  document.getElementById('avgMins').textContent = avgMins;
+  document.getElementById('totalCounts').textContent = totalCnt;
+
+  // Rank
+  const rankList = document.getElementById('rankList');
+  const ranks = ITEMS.map(i=>({item:i,name:ITEM_NAMES[i],icon:ITEM_ICONS[i],count:totalOf(state,i)}))
+    .sort((a,b)=>b.count-a.count);
+  const max = ranks[0].count||1;
+  let html='';
+  ranks.forEach((r,idx)=>{
+    const pct = max>0?(r.count/max*100):0;
+    const cls = idx===0?'r1':idx===1?'r2':idx===2?'r3':'rn';
+    html+=`
+      <div class="rank-row">
+        <div class="rank-num ${cls}">${idx+1}</div>
+        <span class="rank-emoji">${r.icon}</span>
+        <div class="rank-info">
+          <div class="rank-name">${r.name}</div>
+          <div class="rank-count">累计 ${r.count} 次</div>
+        </div>
+        <div class="rank-bar-wrap"><div class="rank-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  });
+  rankList.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// CSV Export
+// ═══════════════════════════════════════════════════════
+function exportCSV(){
+  if(!state.sessions.length){toast('暂无训练记录可导出','gold');return;}
+  const header = ['日期','时长(秒)','时长(分钟)','射门','传球','带球绕桩','接球','头球','总计'];
+  const rows = state.sessions.map(s=>{
+    const total=ITEMS.reduce((a,i)=>a+(s.items[i]||0),0);
+    return[s.date,s.duration,Math.round(s.duration/60),s.items.shoot||0,s.items.pass||0,s.items.dribble||0,s.items.catch||0,s.items.header||0,total];
+  });
+  const csv=[header,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`足球训练记录_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('导出成功！','green');
+}
+
+// ═══════════════════════════════════════════════════════
+// Toast
+// ═══════════════════════════════════════════════════════
+function toast(msg,type='gold'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+type;
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ═══════════════════════════════════════════════════════
+// Refresh all views
+// ═══════════════════════════════════════════════════════
+function refreshAll(){
+  document.getElementById('streakNum').textContent = state.streak;
+  renderBadges();
+  renderStats();
+  if(document.getElementById('page-history').classList.contains('active')){
+    renderCalendar(calWeekStart);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════
+refreshAll();
+// Auto-open history if returning user
+if(state.sessions.length>0){
+  // Show a welcome back toast
+  setTimeout(()=>toast(`欢迎回来！继续加油 💪 连续${state.streak}天`,'green'),800);
+}
+</script>
+</body>
+</html>
