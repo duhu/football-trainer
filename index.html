@@ -896,11 +896,11 @@ refreshAll();
 
 <!-- 底部固定导航按钮（放在 body 末尾，避免被 page-wrap 的 absolute 遮挡） -->
 <div class="week-nav-fixed">
-  <button class="week-nav-btn" onclick="changeWeek(-1)">
+  <button class="week-nav-btn" id="btn-prev" onclick="alert('上一周被点击! calWeekStart='+calWeekStart);changeWeek(-1)">
     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     上一周
   </button>
-  <button class="week-nav-btn" onclick="changeWeek(1)">
+  <button class="week-nav-btn" id="btn-next" onclick="alert('下一周被点击! calWeekStart='+calWeekStart);changeWeek(1)">
     下一周
     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
   </button>
