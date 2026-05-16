@@ -203,7 +203,7 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
   z-index:90;pointer-events:none;
   opacity:0;transition:opacity .2s;
 }
-#page-history.active .week-nav-fixed{opacity:1}
+.week-nav-fixed.show{opacity:1}
 .week-nav-btn{
   pointer-events:auto;background:var(--green);color:#fff;
   border:none;border-radius:999px;padding:12px 20px;
@@ -552,18 +552,6 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
       <p>点击有记录的日期<br>查看当天训练详情</p>
     </div>
   </div>
-
-  <!-- 底部固定导航按钮 -->
-  <div class="week-nav-fixed">
-    <button class="week-nav-btn" onclick="changeWeek(-1)">
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      上一周
-    </button>
-    <button class="week-nav-btn" onclick="changeWeek(1)">
-      下一周
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -779,6 +767,7 @@ function switchTab(page){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+page));
+  document.querySelector('.week-nav-fixed').classList.toggle('show',page==='history');
   if(page==='history')renderCalendar(calWeekStart);
   if(page==='badges')renderBadges();
   if(page==='stats')renderStats();
@@ -901,8 +890,20 @@ function refreshAll(){
 
 // ═══════════════════════════════════════════
 // Init
-// ═══════════════════════════════════════════
+// Init
 refreshAll();
 </script>
+
+<!-- 底部固定导航按钮（放在 body 末尾，避免被 page-wrap 的 absolute 遮挡） -->
+<div class="week-nav-fixed">
+  <button class="week-nav-btn" onclick="changeWeek(-1)">
+    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    上一周
+  </button>
+  <button class="week-nav-btn" onclick="changeWeek(1)">
+    下一周
+    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+</div>
 </body>
 </html>
