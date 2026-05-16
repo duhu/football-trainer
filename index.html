@@ -193,18 +193,16 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
    Calendar
 ═══════════════════════════════════════════ */
 .cal-week-nav{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:10px;
-  gap:8px;
+  display:grid;grid-template-columns:44px 1fr 44px;align-items:center;
+  margin-bottom:10px;gap:4px;
 }
-.cal-week-nav button{
-  background:none;border:none;font-size:28px;cursor:pointer;
-  color:var(--green);padding:8px 14px;border-radius:12px;
-  line-height:1;min-width:52px;min-height:44px;
+.nav-arrow{
+  background:none;border:none;cursor:pointer;
+  color:var(--green);padding:8px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   transition:background .15s;
 }
-.cal-week-nav button:active{background:var(--green-light)}
+.nav-arrow:active{background:var(--green-light)}
 .cal-week-label{font-size:12px;font-weight:700;color:var(--text)}
 .cal-grid{
   display:grid;grid-template-columns:repeat(7,1fr);gap:3px;
@@ -526,9 +524,13 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
   <div class="page-title-row">
     <h2>📅 训练历史</h2>
     <div class="cal-week-nav">
-      <button onclick="changeWeek(-1)">&lt;</button>
+      <button class="nav-arrow prev" onclick="changeWeek(-1)">
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
       <span class="cal-week-label" id="weekLabel"></span>
-      <button onclick="changeWeek(1)">+</button>
+      <button class="nav-arrow next" onclick="changeWeek(1)">
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
   </div>
 
