@@ -197,6 +197,22 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
   margin-bottom:10px;
 }
 .cal-week-hint{font-size:10px;color:var(--text-dim);opacity:.6}
+.week-nav-fixed{
+  position:fixed;bottom:calc(var(--nav-h) + 10px);left:0;right:0;
+  display:flex;justify-content:space-between;padding:0 16px;
+  z-index:90;pointer-events:none;
+  opacity:0;transition:opacity .2s;
+}
+#page-history.active .week-nav-fixed{opacity:1}
+.week-nav-btn{
+  pointer-events:auto;background:var(--green);color:#fff;
+  border:none;border-radius:999px;padding:12px 20px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  box-shadow:0 4px 16px rgba(29,185,84,.35);
+  transition:transform .15s,box-shadow .15s;
+}
+.week-nav-btn:active{transform:scale(.96);box-shadow:0 2px 8px rgba(29,185,84,.25)}
 .cal-week-label{font-size:12px;font-weight:700;color:var(--text)}
 .cal-grid{
   display:grid;grid-template-columns:repeat(7,1fr);gap:3px;
@@ -536,6 +552,18 @@ h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px}
       <p>点击有记录的日期<br>查看当天训练详情</p>
     </div>
   </div>
+
+  <!-- 底部固定导航按钮 -->
+  <div class="week-nav-fixed">
+    <button class="week-nav-btn" onclick="changeWeek(-1)">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      上一周
+    </button>
+    <button class="week-nav-btn" onclick="changeWeek(1)">
+      下一周
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -783,14 +811,6 @@ function renderCalendar(weekStart){
     if(!isFuture)el.addEventListener('click',()=>showDayDetail(dateStr));
     grid.appendChild(el);
   }
-  // swipe to change week
-  const card = document.querySelector('#page-history .card');
-  let startX = 0;
-  card.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-  card.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) > 50) changeWeek(dx < 0 ? 1 : -1);
-  }, { passive: true });
 }
 function showDayDetail(dateStr){
   const sessions=sessionsOfDate(state,dateStr);
